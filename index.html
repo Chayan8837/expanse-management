@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expanding Div Animation</title>
+<style>
+  /* Basic reset */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  /* Body styling */
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+  }
+
+  /* Button styling */
+  #expandButton {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+  }
+
+  /* Expanding div styling */
+  #expandingDiv {
+    position: absolute;
+    top: 50px; /* Adjust positioning as needed */
+    left: 50px;
+    background-color: white;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    transition: width 0.5s ease, height 0.5s ease, opacity 0.5s ease;
+  }
+
+  /* Active class for div expansion */
+  #expandingDiv.active {
+    width: 300px; /* Target width */
+    height: 300px; /* Target height */
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<button id="expandButton">Click Me</button>
+<div id="expandingDiv"></div>
+
+<script>
+  // Select the button and the expanding div
+  const expandButton = document.getElementById("expandButton");
+  const expandingDiv = document.getElementById("expandingDiv");
+
+  // Add click event listener to toggle the active class
+  expandButton.addEventListener("click", () => {
+    expandingDiv.classList.toggle("active");
+  });
+</script>
+
+</body>
+</html>
