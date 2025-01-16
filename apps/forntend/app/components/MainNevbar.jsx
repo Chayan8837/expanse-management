@@ -7,11 +7,21 @@ import { useMediaQuery } from 'react-responsive'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
+
+
+
 export default function MainNavbar() {
   const [active, setActive] = useState('Home')
   const isMobile = useMediaQuery({ maxWidth: 767 })
   const params = useParams()
   const id = params?.id // Dynamically get the `id` parameter
+
+  useEffect(() => {
+    const urlPath = window.location.pathname; // Gets the path, e.g., "/user/672ca66c923d3f569dbe92fd/friends"
+    const lastParam = urlPath.split('/').pop(); // Extracts the last segment
+    setActive(lastParam.charAt(0).toUpperCase() + lastParam.slice(1)); // Capitalize first letter
+  }, []);
+  
 
   const navItems = [
     { icon: Home, label: 'Home', href: id ? `/user/${id}` : '/' }, // Use dynamic id in URL
@@ -57,7 +67,7 @@ export default function MainNavbar() {
         className={`${
           isMobile
             ? 'bg-gray-900 w-full'
-            : 'bg-gray-900 bg-opacity-90 backdrop-blur-md rounded-t-xl shadow-lg w-auto max-w-md'
+            : 'bg-gray-900 bg-opacity-90 backdrop-blur-md  rounded-xl md:rounded-t-xl shadow-lg w-auto max-w-md'
         }`}
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
