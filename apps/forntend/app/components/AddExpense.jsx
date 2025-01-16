@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { DollarSign, User, FileText, Search, Percent } from 'lucide-react'
 import { useSelector } from 'react-redux'
 userApis
-import expenseApis from '../../../app/app/api/expensApi'
+import expenseApis from '../api/expensApi'
 import userApis from '../api/userApi'
 import { useDispatch } from 'react-redux'
 import { addNewExpense } from '../Redux/User/AccountSlice'
