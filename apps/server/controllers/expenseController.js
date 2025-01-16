@@ -123,6 +123,7 @@ exports.updateExpenseSplit = async (req, res) => {
         if (split_type === 'equal') {
             const splitAmount = expense.amount / split_members.length;
             processedSplitMembers = split_members.map(userId => ({ user: userId, amount: splitAmount }));
+            console.log(splitAmount)
         } else if (split_type === 'exact') {
             const totalSplitAmount = split_members.reduce((total, member) => total + member.amount, 0);
             if (totalSplitAmount !== expense.amount) {

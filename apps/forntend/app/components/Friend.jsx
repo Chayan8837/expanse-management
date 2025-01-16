@@ -51,7 +51,7 @@ export default function Friend() {
   const [showFriendReq, setShowFriendReq] = useState(false);
   const [socket, setSocket] = useState(null);
   const { verifyUser } = userApis;
-  const { getFriends, addFriend, acceptFriend, deleteFriend, blockUser } = friendsApi;
+  const { getFriends, addFriend, acceptFriend, deleteFriend, blockfriend,unblockfriend } = friendsApi;
   const [showAddFriend, setShowAddFriend] = useState(false);
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [messageBox, setMessageBox] = useState(false);
@@ -193,17 +193,19 @@ export default function Friend() {
 
   const handleBlockUser = async (friendId) => {
     try {
-      await blockUser(userId, friendId);
-      // Refresh friends list after blocking
-      const res = await getFriends(userId);
-      if (res && res.friends) {
-        dispatch(setFriends(res.friends));
-      }
-      // Clear selected friend if blocked
-      if (selectedFriend?.friendId === friendId) {
-        setSelectedFriend(null);
-        setMessageList([]);
-      }
+      await blockfriend({userId, friendId});
+     
+    } catch (error) {
+      console.error('Failed to block user:', error);
+    }
+  };
+
+  const handleUnblockUser = async (friendId) => {
+    try {
+      console.log("user unblocking");
+      
+      await unblockfriend({userId, friendId});
+     
     } catch (error) {
       console.error('Failed to block user:', error);
     }
@@ -299,9 +301,13 @@ export default function Friend() {
                       </button>
                       <button 
                         className="block px-4 py-2 text-sm text-yellow-400 hover:bg-gray-700 w-full text-left"
-                        onClick={() => handleBlockUser(friend.friendId)}
+                        onClick={() => 
+                          friend.status=="blocked"?handleUnblockUser(friend.friendId):handleBlockUser(friend.friendId)
+                          }
+
                       >
-                        Block User
+                        {friend.status=="blocked"?"Unblock User":"Block User"}
+                    
                       </button>
                     </div>
                   </div>

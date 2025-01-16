@@ -33,7 +33,7 @@ export default function SplitWiseUserProfile() {
     dispatch(showAlert({ message, type }));
   };
 
-  console.log(userDetail)
+ 
   const [isEditing, setIsEditing] = useState(false)
   const [userDetails, setUserDetails] = useState({
     name: 'John Doe',

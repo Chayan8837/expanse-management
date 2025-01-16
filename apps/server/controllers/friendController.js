@@ -124,6 +124,7 @@ exports.acceptRequest = async (req, res) => {
     try {
         // Find the friend entry for the user
         const userFriendEntry = await Friends.findOne({ userId });
+        const friendFriendEntry= await Friends.findOne({userId:friendId});
 
         // Check if `userFriendEntry` exists
         if (!userFriendEntry) {
@@ -132,6 +133,8 @@ exports.acceptRequest = async (req, res) => {
 
         // Find the friend request in `requestedFriends`
         const existingFriendRequest = userFriendEntry.requstedfriends.find(f => f.friendId.toString() === friendId);
+        const my_entry_in_friend_FiendList = friendFriendEntry.friends.find(f => f.friendId.toString() === userId);
+        
 
         // If no friend request is found, return an error
         if (!existingFriendRequest) {
@@ -149,9 +152,13 @@ exports.acceptRequest = async (req, res) => {
             requested_at: existingFriendRequest.requested_at,
             accepted_at: existingFriendRequest.accepted_at
         });
-
+        if (my_entry_in_friend_FiendList){
+            my_entry_in_friend_FiendList.status= "accepted",
+            my_entry_in_friend_FiendList.accepted_at= new Date()
+        }
         // Save the updated friend entry
         await userFriendEntry.save();
+        await friendFriendEntry.save();
         console.log("Request accepted and moved to friends list");
 
         return res.status(200).json({ msg: `Friend request accepted from ${friendId}` });
@@ -161,4 +168,86 @@ exports.acceptRequest = async (req, res) => {
     }
 };
 
+
+exports.blockfriend= async(req,res)=>{
+    const { userId, friendId } = req.body;
+
+    try {
+        // Find the friend entry for the user
+        const userFriendEntry = await Friends.findOne({ userId });
+        const friendFriendEntry= await Friends.findOne({userId:friendId});
+
+        // Check if `userFriendEntry` exists
+        if (!userFriendEntry) {
+            return res.status(404).json({ msg: 'User entry not found' });
+        }
+
+        // Find the friend request in `requestedFriends`
+        const his_entry_in_my_FriendList = userFriendEntry.friends.find(f => f.friendId.toString() === friendId);
+        const my_entry_in_friend_FiendList = friendFriendEntry.friends.find(f => f.friendId.toString() === userId);
+        
+
+        // If no friend request is found, return an error
+        if (!his_entry_in_my_FriendList) {
+            return res.status(400).json({ msg: 'No friend request found' });
+        }
+
+        // Update the status of the friend request to 'accepted' and set `accepted_at`
+        his_entry_in_my_FriendList.status = 'blocked';
+        his_entry_in_my_FriendList.blocked_at = new Date();
+            my_entry_in_friend_FiendList.status= "blocked",
+            my_entry_in_friend_FiendList.blocked_at= new Date()
+        
+        // Save the updated friend entry
+        await userFriendEntry.save();
+        await friendFriendEntry.save();
+        console.log("user blocked");
+
+        return res.status(200).json({ msg: `Friend blocked ` });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ msg: 'Internal server error' });
+    }
+
+}
+
+exports.ublockfriend= async(req,res)=>{
+    const { userId, friendId } = req.body;
+
+    try {
+        // Find the friend entry for the user
+        const userFriendEntry = await Friends.findOne({ userId });
+        const friendFriendEntry= await Friends.findOne({userId:friendId});
+
+        // Check if `userFriendEntry` exists
+        if (!userFriendEntry) {
+            return res.status(404).json({ msg: 'User entry not found' });
+        }
+
+        // Find the friend request in `requestedFriends`
+        const his_entry_in_my_FriendList = userFriendEntry.friends.find(f => f.friendId.toString() === friendId);
+        const my_entry_in_friend_FiendList = friendFriendEntry.friends.find(f => f.friendId.toString() === userId);
+        
+
+        // If no friend request is found, return an error
+        if (!his_entry_in_my_FriendList) {
+            return res.status(400).json({ msg: 'No friend request found' });
+        }
+
+        // Update the status of the friend request to 'accepted' and set `accepted_at`
+        his_entry_in_my_FriendList.status = "accepted";
+            my_entry_in_friend_FiendList.status= "accepted",
+        
+        // Save the updated friend entry
+        await userFriendEntry.save();
+        await friendFriendEntry.save();
+        console.log("user Unblocked");
+
+        return res.status(200).json({ msg: `Friend Unblocked ` });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ msg: 'Internal server error' });
+    }
+
+}
 

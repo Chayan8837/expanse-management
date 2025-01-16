@@ -1,4 +1,5 @@
 import axios from "axios";
+import { blockfriend } from "../../../server/controllers/friendController";
 
 const friendsApi = {
     getFriends: async (userId) => {
@@ -38,6 +39,14 @@ const friendsApi = {
     acceptRequest: async(data)=>{
         const response = await axios.post("http://localhost:5000/api/friend/acceptrequest",data);
         console.log(response.data);
+    },
+    blockfriend:async(data)=>{
+        const response = await axios.put("http://localhost:5000/api/friend/blockfriend",data);
+        console.log(response);
+    },
+    unblockfriend:async(data)=>{
+        const response = await axios.put("http://localhost:5000/api/friend/unblockfriend",data);
+        console.log(response);
     }
 };
 
