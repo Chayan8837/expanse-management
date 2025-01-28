@@ -59,3 +59,26 @@ exports.upload = async (req, res) => {
   if (!user) return res.status(404).json({ msg: 'User not found' });
   return res.status(200).json({ msg: 'Avatar uploaded successfully',  user});
 }
+
+exports.changepassword = async (req, res) => {
+  const { id,old_password,new_password } = req.body;
+  const user= await User.findOne({_id:id});
+  if (!user) return res.status(401).json({ msg: 'user not found' });
+  const isMatch = await bcrypt.compare(old_password, user.password);
+  if (!isMatch) return res.status(400).json({ msg: 'Invalid old password' });
+  const hashedPassword = await bcrypt.hash(new_password, 10);
+  const updatedUser = await User.findByIdAndUpdate(id, { password: hashedPassword }, { new: true });
+  if (!updatedUser) return res.status(404).json({ msg: 'User not found' });
+  return res.status(200).json({ msg: 'Password changed successfully',  user});
+
+};
+exports.changepasswordwithout = async (req, res) => {
+  const { id,new_password } = req.body;
+  const user= await User.findOne({_id:id});
+  if (!user) return res.status(401).json({ msg: 'user not found' });
+  const hashedPassword = await bcrypt.hash(new_password, 10);
+  const updatedUser = await User.findByIdAndUpdate(id, { password: hashedPassword }, { new: true });
+  if (!updatedUser) return res.status(404).json({ msg: 'User not found' });
+  return res.status(200).json({ msg: 'Password changed successfully',  user});
+
+};

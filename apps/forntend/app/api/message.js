@@ -1,5 +1,7 @@
 const dbName = 'MessageDB';
 const storeName = 'Messages';
+import axios from "axios";
+
 
 // Initialize the database
 export const initDB = () => {
@@ -24,7 +26,8 @@ export const initDB = () => {
 };
 
 // Add a message to the database
-export const addMessage = (db, message) => {
+export const addMessage = async (db, message) => {
+    console.log(message)
     return new Promise((resolve, reject) => {
         // Ensure the message has an id before adding
         if (!message.id) {
@@ -33,6 +36,7 @@ export const addMessage = (db, message) => {
         const transaction = db.transaction(storeName, 'readwrite');
         const store = transaction.objectStore(storeName);
         const request = store.add(message);
+
 
         request.onsuccess = () => resolve();
         request.onerror = (event) => reject(event.target.error);
@@ -50,3 +54,36 @@ export const getAllMessages = (db) => {
         request.onerror = (event) => reject(event.target.error);
     });
 };
+
+
+export const fetchMessages=async(userId, friendId, db)=> {
+    try {
+        if (!db) {
+            throw new Error('Database is not initialized');
+          }
+      // Make the API call to fetch messages
+      console.log("Fetching messages...");
+      const response = await fetch(`http://localhost:5000/api/messages/${userId}/${friendId}`);
+      
+      // Check if the response is successful
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
+      }
+  
+      const messages = await response.json();
+      console.log('Fetched messages:', messages);
+  
+      for (const message of messages) {
+        console.log('Adding message:', message);
+        await addMessage(db, message); // Make sure db is passed correctly
+      }
+      console.log("All messages added successfully.");
+  
+    } catch (error) {
+      console.error('Error fetching and storing messages:', error);
+    }
+  }
+ 
+
+
+

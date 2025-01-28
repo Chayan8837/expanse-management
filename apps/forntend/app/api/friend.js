@@ -1,5 +1,4 @@
 import axios from "axios";
-import { blockfriend } from "../../../server/controllers/friendController";
 
 const friendsApi = {
     getFriends: async (userId) => {

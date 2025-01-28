@@ -1,6 +1,41 @@
 "use client"
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice,createAsyncThunk } from '@reduxjs/toolkit';
+import friendsApi  from "@/app/api/friend"
+import userApis from "@/app/api/userApi"
 
+export const fetchFriendsList = createAsyncThunk(
+  'friend/fetchFriends',
+  async (userId, { rejectWithValue }) => {
+    try {
+      if (!userId) return [];
+      const res = await friendsApi.getFriends(userId);
+      
+      if (res && res.friends) {
+        const friendsWithDetails = await Promise.all(
+          res.friends.map(async (friend) => {
+            try {
+              const userDetails = await userApis.verifyUser(friend.friendId);
+              return {
+                ...friend,
+                name: userDetails.user.name,
+                email: userDetails.user.email,
+                avatar: userDetails.user.avatar
+              };
+            } catch (error) {
+              console.error(`Error fetching details for friend ${friend.friendId}:`, error);
+              return friend; // Return the original friend object if details fetch fails
+            }
+          })
+        );
+        return friendsWithDetails;
+      } else {
+        throw new Error('Failed to fetch friends');
+      }
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 const initialState = {
   friends: [],
   pendingRequests: [],
@@ -59,6 +94,22 @@ const friendSlice = createSlice({
     removeSentRequest: (state, action) => {
       state.sentRequests = state.sentRequests.filter(request => request.id !== action.payload);
     }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchFriendsList.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchFriendsList.fulfilled, (state, action) => {
+        state.friends = action.payload;
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(fetchFriendsList.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
   }
 });
 

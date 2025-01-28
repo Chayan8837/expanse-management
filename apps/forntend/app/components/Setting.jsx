@@ -1,9 +1,50 @@
+"use client"
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Clock, Trash, Ban, BellOff, Plus, X } from 'lucide-react';
 import userApis from '../api/userApi';
+import friendsApi from "../api/friend"
+import { useSelector,useDispatch } from 'react-redux';
+import { fetchFriendsList } from '../Redux/User/friendSlice';
 
-const UserSettings = ({ userId }) => {
+
+
+const UserSettings =  ({ friend }) => {
+  const [block, setblock] = useState(false);
+  const { isAuthenticated, userName,userAvatar, userId } = useSelector((state) => state.user);
+  const friends = useSelector((state) => state.friend); 
+  const currentFriend = friends.friends.find(f => f.friendId === friend.friendId);
+  const [Loading, setLoading] = useState(false);
+
+
+  
+  const dispatch = useDispatch()
+
+
+  const handleBlock = async () => {
+    setLoading(true);
+
+    try {
+      if (currentFriend.status === "blocked") {
+        await friendsApi.unblockfriend({ userId, friendId: friend.friendId });
+        await dispatch(fetchFriendsList(userId));
+
+        // Optionally update the UI or state here
+      } else {
+        await friendsApi.blockfriend({ userId, friendId: friend.friendId });
+        await dispatch(fetchFriendsList(userId));
+
+        // Optionally update the UI or state here
+      }
+    } catch (error) {
+      console.error("Error handling block/unblock:", error);
+      // Optionally show an error message to the user
+    }finally{setLoading(false)}
+  };
+  
+  
+
+  
   const ToggleButton = ({ id, label, checked, onChange }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
       <label htmlFor={id} style={{ color: '#e4e4e7' }}>{label}</label>
@@ -57,7 +98,7 @@ const UserSettings = ({ userId }) => {
 
   const verifyUserDetails = async () => {
     try {
-      const userData = await userApis.verifyUser(userId);
+      const userData = await userApis.verifyUser(friend.friendId);
       setUserDetails(prevDetails => ({
         ...prevDetails,
         name: userData.user.name,
@@ -74,7 +115,7 @@ const UserSettings = ({ userId }) => {
 
   useEffect(() => {
     verifyUserDetails();
-  }, [userId]);
+  }, []);
 
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("View Profile");
@@ -97,16 +138,16 @@ const UserSettings = ({ userId }) => {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div onClick={() => setIsImagePopupOpen(true)} style={{ cursor: 'pointer' }}>
           <img 
-            src={userDetails.avatar} 
-            alt={userDetails.name} 
+            src={friend.avatar} 
+            alt={friend.name} 
             style={{ width: '128px', height: '128px', borderRadius: '50%' }} 
           />
         </div>
         {isImagePopupOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img 
-              src={userDetails.avatar} 
-              alt={userDetails.name} 
+              src={friend.avatar} 
+              alt={friend.name} 
               style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: '8px' }} 
             />
             <button onClick={() => setIsImagePopupOpen(false)} style={{ position: 'absolute', top: '20px', right: '20px', backgroundColor: 'transparent', color: '#ffffff', border: 'none', fontSize: '24px', cursor: 'pointer' }}>✖</button>
@@ -190,8 +231,11 @@ const UserSettings = ({ userId }) => {
 
   const renderBlockUser = () => (
     <div style={{ color: '#e4e4e7' }}>
-      <h4 style={{ fontWeight: 'semibold', marginBottom: '0.5rem' }}>Block User</h4>
-      <button style={{ backgroundColor: '#ef4444', color: '#ffffff', padding: '0.5rem 1rem', borderRadius: '0.375rem', fontWeight: 'medium' }}>Block User</button>
+      <h4 style={{ fontWeight: 'semibold', marginBottom: '0.5rem' }}>
+      {currentFriend.status=="blocked"?"Unblock User":"Block User"}</h4>
+      <button style={{ backgroundColor: '#ef4444', color: '#ffffff',padding: '0.5rem 1rem', borderRadius: '0.375rem', fontWeight: 'medium' }}
+      onClick={()=>{handleBlock()}}
+      >  {currentFriend.status=="blocked"?"Unblock User":"Block User"}</button>
       <hr style={{ margin: '1rem 0', borderColor: '#4b5563' }} />
     </div>
   );
@@ -262,6 +306,11 @@ const UserSettings = ({ userId }) => {
 
   return (
     <div style={{ padding: '1.5rem', position: 'fixed', top: 0, right: 0, width: '24rem', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', zIndex: "50" }}>
+      {Loading&&(
+         <div className="absolute inset-0 flex items-center justify-center">
+         <div className="w-10 h-10 border-4 border-t-blue-400 border-r-purple-400 border-b-pink-400 border-l-transparent rounded-full animate-spin"></div>
+       </div>
+      )}
       <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ffffff', marginBottom: '1rem' }}>Settings</h2>
       <div style={{ height: 'calc(100vh - 120px)', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-around', padding: '0.25rem', backgroundColor: '#1f2937', borderRadius: '0.5rem', marginBottom: '1rem' }}>
