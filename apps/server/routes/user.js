@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login,verify,upload,changepasswordwithout } = require('../controllers/userController'); // Adjust the path as needed
+const { register, login,verify,upload,changepassword } = require('../controllers/userController'); // Adjust the path as needed
 
 // Register route
 router.post('/register', register);
@@ -15,7 +15,7 @@ router.post('/verify',verify);
 router.post('/upload', upload);
 
 //change password
-router.post('/changepassword', changepasswordwithout);
+router.post('/changepassword', changepassword);
 
 module.exports = router;
 

@@ -65,6 +65,7 @@ export default function Friend() {
   const [searchTerm, setSearchTerm] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [messageList, setMessageList] = useState([]);
+  const [lastMessages, setLastMessages] = useState({});
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -77,7 +78,13 @@ export default function Friend() {
       timestamp: new Date().toISOString(),
     };
     await addMessage(db, message);
+    setLastMessages((prevLastMessages) => ({
+      ...prevLastMessages,
+      [selectedFriend.friendId]: message,
+    }));
     socket.emit('sendMessage', message);
+    console.log(lastMessages);
+    
     setNewMessage('');
   };
 
@@ -152,6 +159,10 @@ export default function Friend() {
         timestamp: new Date().toISOString()
       };
       await addMessage(db, newMessage);
+      setLastMessages((prevLastMessages) => ({
+        ...prevLastMessages,
+        [messageData.senderId]: newMessage, // Assuming message.senderId is the friend who sent the message
+    }));
     }
 
     socket?.on('receiveMessage', handleMessageReceive);
@@ -221,12 +232,16 @@ export default function Friend() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
       {showAddFriend && <AddFriend onClose={() => setShowAddFriend(false)} />}
       {showFriendReq && <FriendReq onClose={() => setShowFriendReq(false)} />}
-      <div className={`container mx-auto flex flex-col lg:flex-row gap-8 mt-10 h-[80vh] max-w-7xl ${isMobile ? "h-[100vh]" : ""}`}>
+      <div
+        className={`container mx-auto flex flex-col lg:flex-row gap-8 mt-10 h-[80vh] max-w-7xl ${isMobile ? "h-[100vh]" : ""}`}
+      >
         {/* Friends List Section */}
         <div className={`w-full h-full lg:w-1/3 ${isMobile ? "h-[85vh]" : ""}`}>
           <GlassCard className="p-6 h-full ">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold mb-6 text-white">Friends List</h2>
+              <h2 className="text-2xl font-bold mb-6 text-white">
+                Friends List
+              </h2>
 
               <div className="relative flex items-center">
                 <button
@@ -236,8 +251,7 @@ export default function Friend() {
                   <User className="w-5 h-5" />
                   Requests
                 </button>
-                <span className="text-white h-5 w-5 text-center px-2 font-bold text-l ml-4 rounded-full fixed right-3 top-4 bg-red-700">
-                </span>
+                <span className="text-white h-5 w-5 text-center px-2 font-bold text-l ml-4 rounded-full fixed right-3 top-4 bg-red-700"></span>
               </div>
             </div>
             <button
@@ -254,14 +268,17 @@ export default function Friend() {
               className="mb-6"
             />
             <div className="space-y-4 overflow-y-auto h-[90vh]">
-              {filteredFriends.length === 0 && <p className="text-gray-400 text-center">No friends found</p>}
+              {filteredFriends.length === 0 && (
+                <p className="text-gray-400 text-center">No friends found</p>
+              )}
               {filteredFriends.map((friend) => (
                 <div
                   key={friend.friendId}
-                  className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-300 ${selectedFriend?.friendId === friend.friendId
-                      ? 'bg-gradient-to-r from-purple-600/30 to-blue-600/30 border border-purple-500/20'
-                      : 'hover:bg-white/5'
-                    }`}
+                  className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-300 ${
+                    selectedFriend?.friendId === friend.friendId
+                      ? "bg-gradient-to-r from-purple-600/30 to-blue-600/30 border border-purple-500/20"
+                      : "hover:bg-white/5"
+                  }`}
                 >
                   <div
                     className="flex items-center space-x-4"
@@ -270,22 +287,45 @@ export default function Friend() {
                       setMessageBox(true);
                       setMessageList([]);
                       console.log(friend);
-
-
                     }}
                   >
                     <div>
-                      <div className='absolute flex items-center justify-center w-6 h-6 text-xs text-white bg-green-500 rounded-full border-2 border-white'>2</div>
+                      <div className="absolute flex items-center justify-center w-6 h-6 text-xs text-white bg-green-500 rounded-full border-2 border-white">
+                        2
+                      </div>
                       <img
-                        src={friend.avatar || "https://picsum.photos/seed/default/200"}
+                        src={
+                          friend.avatar ||
+                          "https://picsum.photos/seed/default/200"
+                        }
                         alt={friend.name}
                         className="w-12 h-12 rounded-full object-cover border-2 border-purple-500/30 shadow-lg"
                       />
-
                     </div>
                     <div>
-                      <p className="font-semibold text-white text-lg">{friend.name}</p>
-                      <p className="text-gray-400 text-sm">{friend.status || 'Online'}</p>
+                      <p className="font-semibold text-white text-lg">
+                        {friend.name}
+                      </p>
+                      {lastMessages[friend.friendId] ? (
+                        <div className="flex gap-8 text-white">
+                          <p className=" text-white">
+                          {lastMessages[friend.friendId].senderId === userId
+        ? `You: ${lastMessages[friend.friendId].message}`
+        :   `${friend.name}: ${lastMessages[friend.friendId].message}   `     }                          </p>
+                          <small>
+                            {new Date(
+                              lastMessages[friend.friendId].timestamp
+                            ).toLocaleString()}
+                          </small>
+                        </div>
+                      ) : (
+                        <div>
+                          {" "}
+                          <p className="text-gray-400 text-sm">
+                            {friend.status || "Online"}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -294,12 +334,23 @@ export default function Friend() {
                       onClick={(e) => {
                         e.stopPropagation();
                         const menu = e.currentTarget.nextElementSibling;
-                        menu.classList.toggle('hidden');
+                        menu.classList.toggle("hidden");
                       }}
                       className="text-gray-400 hover:text-white"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                        />
                       </svg>
                     </button>
 
@@ -313,12 +364,14 @@ export default function Friend() {
                       <button
                         className="block px-4 py-2 text-sm text-yellow-400 hover:bg-gray-700 w-full text-left"
                         onClick={() =>
-                          friend.status == "blocked" ? handleUnblockUser(friend.friendId) : handleBlockUser(friend.friendId)
+                          friend.status == "blocked"
+                            ? handleUnblockUser(friend.friendId)
+                            : handleBlockUser(friend.friendId)
                         }
-
                       >
-                        {friend.status == "blocked" ? "Unblock User" : "Block User"}
-
+                        {friend.status == "blocked"
+                          ? "Unblock User"
+                          : "Block User"}
                       </button>
                     </div>
                   </div>
@@ -332,63 +385,83 @@ export default function Friend() {
         <div
           className={`w-full lg:w-2/3 ${isMobile && !messageBox ? "hidden" : "block"}`}
         >
-         
           <GlassCard className="p-6 h-full relative">
-        
             <div className="flex items-center justify-between border-gray-700/30 border-b pb-4">
               <div className="flex items-center">
                 {selectedFriend && (
                   <img
-                    src={selectedFriend.avatar || "https://picsum.photos/seed/default/200"}
+                    src={
+                      selectedFriend.avatar ||
+                      "https://picsum.photos/seed/default/200"
+                    }
                     alt={selectedFriend.name}
                     className="w-10 h-10 rounded-full mr-4 border-2 border-purple-500/30"
                   />
                 )}
                 <h2 className="text-2xl font-bold text-white">
-                  {selectedFriend ? selectedFriend.name : 'Select a friend to start chatting'}
+                  {selectedFriend
+                    ? selectedFriend.name
+                    : "Select a friend to start chatting"}
                 </h2>
               </div>
               {selectedFriend && (
-                <button className="text-gray-400 hover:text-white ml-2" onClick={() => setSettingsVisible(!settingsVisible)}>
+                <button
+                  className="text-gray-400 hover:text-white ml-2"
+                  onClick={() => setSettingsVisible(!settingsVisible)}
+                >
                   <Settings className="h-6 w-6" />
                 </button>
-
-
-
               )}
               {settingsVisible && <UserSettings friend={selectedFriend} />}
             </div>
 
-            <div className="flex flex-col h-[86%]" onClick={() => setSettingsVisible(false)}
+            <div
+              className="flex flex-col h-[86%]"
+              onClick={() => setSettingsVisible(false)}
             >
               <div className="flex-grow space-y-4 mb-4 overflow-y-auto pr-4 ">
                 {selectedFriend ? (
                   messageList.map((message, index) => (
                     <div
                       key={message.id || index}
-                      className={`flex items-end space-x-3 ${message.senderId === userId ? 'justify-end' : 'justify-start'}`}
+                      className={`flex items-end space-x-3 ${message.senderId === userId ? "justify-end" : "justify-start"}`}
                     >
                       {message.senderId !== userId && (
                         <img
-                          src={selectedFriend.avatar || "https://picsum.photos/seed/default/200"}
+                          src={
+                            selectedFriend.avatar ||
+                            "https://picsum.photos/seed/default/200"
+                          }
                           alt={selectedFriend.name}
                           className="w-8 h-8 rounded-full object-cover border-2 border-purple-500/30"
                         />
                       )}
                       <div
-                        className={`p-4 rounded-2xl max-w-[70%] ${message.senderId === userId
-                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 rounded-br-sm'
-                            : 'bg-gray-800/60 backdrop-blur-xl rounded-bl-sm'
-                          }`}
+                        className={`p-4 rounded-2xl max-w-[70%] ${
+                          message.senderId === userId
+                            ? "bg-gradient-to-r from-purple-600 to-blue-600 rounded-br-sm"
+                            : "bg-gray-800/60 backdrop-blur-xl rounded-bl-sm"
+                        }`}
                       >
-                        <p className="text-white text-base break-words" style={{ maxWidth: '300px' }}>{message.message}</p>
+                        <p
+                          className="text-white text-base break-words"
+                          style={{ maxWidth: "300px" }}
+                        >
+                          {message.message}
+                        </p>
                         <p className="text-xs text-gray-300/80 mt-2">
-                          {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(message.timestamp).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </p>
                       </div>
                       {message.senderId === userId && (
                         <img
-                          src={userAvatar || "https://picsum.photos/seed/default/200"}
+                          src={
+                            userAvatar ||
+                            "https://picsum.photos/seed/default/200"
+                          }
                           alt="You"
                           className="w-8 h-8 rounded-full object-cover border-2 border-purple-500/30"
                         />
@@ -397,18 +470,33 @@ export default function Friend() {
                   ))
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-gray-300 space-y-4">
-                    <svg className="w-16 h-16 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    <svg
+                      className="w-16 h-16 text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
                     </svg>
-                    <p className="text-xl font-medium">Select a friend to start chatting</p>
+                    <p className="text-xl font-medium">
+                      Select a friend to start chatting
+                    </p>
                   </div>
                 )}
               </div>
             </div>
             <div className="mt-auto w-full">
-              {selectedFriend && selectedFriend.status==="accepted"&& (
+              {selectedFriend && selectedFriend.status === "accepted" && (
                 <div className="flex items-center mb-6 border-gray-700/30 border-t pt-4 w-full">
-                  <form onSubmit={sendMessage} className="flex space-x-3 w-full">
+                  <form
+                    onSubmit={sendMessage}
+                    className="flex space-x-3 w-full"
+                  >
                     <GlassInput
                       placeholder="Type your message..."
                       value={newMessage}
